@@ -1,0 +1,45 @@
+global:
+  scrape_interval: 15s
+
+scrape_configs:
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  - job_name: 'node'
+    static_configs:
+      - targets: ['node-exporter:9100']
+
+  - job_name: 'cadvisor'
+    static_configs:
+      - targets: ['cadvisor:8080']
+
+  # Sondes de disponibilité des équipements (via blackbox exporter)
+  - job_name: 'blackbox-tcp'
+    metrics_path: /probe
+    params:
+      module: [tcp_connect]
+    static_configs:
+      - targets: ['srvalou:53']
+        labels:
+          equipement: 'Serveur DNS (srvalou)'
+          service: 'DNS port 53'
+      - targets: ['clalou:80']
+        labels:
+          equipement: 'Poste client (clalou)'
+          service: 'HTTP port 80'
+      - targets: ['nagios:80']
+        labels:
+          equipement: 'Nagios'
+          service: 'Interface web'
+      - targets: ['mailhog:8025']
+        labels:
+          equipement: 'MailHog'
+          service: 'Boîte mail de test'
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: blackbox:9115
